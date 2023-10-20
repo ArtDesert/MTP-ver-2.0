@@ -85,7 +85,7 @@ def draw_numerical_solution(V):
     t_arr = get_arr(0, K + 1, T / K)
 
     plt.figure(1, label="График численного решения: зависимости температуры от x при фиксированных значениях t")
-    plt.xlabel('Длина x, см')
+    plt.xlabel('Координата x, см')
     plt.ylabel('Температура v, ℃')
     for t in t_values:
         plt.plot(x_arr, V[(int)(t / (T / K)), :], label=f"t = {t}")
@@ -97,8 +97,8 @@ def draw_numerical_solution(V):
         plt.plot(t_arr, V[:, (int)(x / (l_x / I))], label=f'x = {x}')
     plt.xlabel('Время t, с')
     plt.ylabel('Температура v, ℃')
-    plt.legend()
 
+    plt.legend()
     plt.show()
 
 def get_Cn(n):
@@ -133,29 +133,27 @@ def meth_dich(a, b, eps):
 def fun(x):
     return np.tan(l_x * x / 2) - h / x
 
-def draw_analytical_solution(n):
+def draw_analytical_solution_for_fixed_t(n):
     #Рассматриваем правую половину отрезка, т.е. l_x / 2 < x < l_x (она симметрична левой)
     x_arr = get_arr(l_x / 2, I + 1, l_x / (2 * I))
-    t_values = [0, 5, 20, 75, 200]
-    x_values = [5, 6, 7, 8, 9, 10]
+    t = 5
 
-    plt.figure(3, label="График аналитического решения: зависимости температуры от x при t = 100")
-    plt.xlabel('Длина x, см')
+    plt.figure(3, label=f"График аналитического решения: зависимости температуры от x при t = {t}")
+    plt.xlabel('Координата x, см')
     plt.ylabel('Температура v, ℃')
 
-    t = 5
+    #Строим правую половину
     V_analytic = [0] * (I + 1)
     for i in range(I + 1):
         V_analytic[i] = get_solve_value(x_arr[i], t, n)
-    plt.plot(x_arr, V_analytic, label=f"Аналитическое решение при t = {t}, n = {n}", color="blue")
+    plt.plot(x_arr, V_analytic, label=f"Аналитическое решение, t = {t}, n = {n}", color="blue")
 
+    #Строим симметрично левую половину
     x_arr = get_arr(0, I + 1, l_x / (2 * I))
     V_analytic = [0] * (I + 1)
     for i in range(I + 1):
         V_analytic[i] = get_solve_value(x_arr[i], t, n)
     plt.plot(x_arr, V_analytic, color="blue")
-
-
 
     splitting_values = [10, 40, 160, 320, 640, 1280]
     for splitting_value in splitting_values:
@@ -163,19 +161,25 @@ def draw_analytical_solution(n):
         x_arr = get_arr(0, (splitting_value + 1), l_x / splitting_value)
         plt.plot(x_arr, V_numerical[(int)(t * splitting_value / T), :], label=f"I = {splitting_value}, K = {splitting_value}")
 
+    plt.legend()
 
+def draw_analytical_solution_for_fixed_x(n):
+    t_arr = get_arr(0, K + 1 , T / K)
+    x = 3
+    plt.figure(4, label=f"График аналитического решения: зависимости температуры от t при x = {x}")
 
+    V_analytic = [0] * (K + 1)
+    for i in range(K + 1):
+        V_analytic[i] = get_solve_value(x, t_arr[i], n)
+    plt.plot(t_arr, V_analytic, label=f"Аналитическое решение, x = {x}, n = {n}", color="blue")
+    plt.xlabel('Время, с')
+    plt.ylabel('Температура, ℃')
 
-
-    #t_arr = get_arr(0, K + 1 , T / K)
-    #t_arr = get_arr(0, K + 1 , T / K)
-    #plt.figure(2, label="График зависимости температуры от времени t при фиксированных значениях x")
-    #plt.subplot(1, 1, 1)
-    #for x in x_values:
-    #    plt.plot(t_arr, V[:, (int)(x / h_x)], label=f'x = {x}')
-    #plt.xlabel('Время, с')
-    #plt.ylabel('Температура, ℃')
-
+    splitting_values = [10, 40, 160, 320, 640, 1280]
+    for splitting_value in splitting_values:
+        V_numerical = get_numerical_solution(splitting_value, splitting_value)
+        t_arr = get_arr(0, (splitting_value + 1), T / splitting_value)
+        plt.plot(t_arr, V_numerical[:, (int)(x * splitting_value / l_x)], label=f"I = {splitting_value}, K = {splitting_value}")
 
     plt.legend()
     plt.show()
@@ -188,14 +192,14 @@ alpha = 0.004
 k = 0.13
 c = 1.84
 u_0 = 0
-I = 50
+I = 200
 K = 200
 
 beta = k / c
 h = alpha / k
 
 V = get_numerical_solution(I, K)
-#draw_numerical_solution(V)
+draw_numerical_solution(V)
 
 #Поиск трансцендентных корней
 P_n = []
@@ -208,4 +212,6 @@ for i in range(100):
     P_n.append(meth_dich(l, r_asymp - d, eps))
     l = r_asymp + d
 
-draw_analytical_solution(100)
+n = 100
+draw_analytical_solution_for_fixed_t(n)
+draw_analytical_solution_for_fixed_x(n)
