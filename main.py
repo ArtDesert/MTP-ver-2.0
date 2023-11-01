@@ -5,7 +5,6 @@ def psi(x):
     return 5 * np.sin(np.pi * x / l_x)
 
 def get_arr(left, n, h):
-    #c = 0.0
     arr = [0] * n
     arr[0] = left
     for i in range(1, n):
@@ -17,7 +16,7 @@ def get_arr(left, n, h):
 #d - массив диагональных элементов
 #e - массив наддиагональных элементов (последний элемент всегда = 0)
 #f - правая часть
-def get_tridiagonal_solve(c, d, e, f): #OK
+def get_tridiagonal_solve(c, d, e, f):
     n = len(f)
     #Массивы прогоночных коэффициентов
     a = [0] * n
@@ -37,44 +36,6 @@ def get_tridiagonal_solve(c, d, e, f): #OK
     for i in range(n - 2, -1, -1):
         x[i] = b[i] - a[i] * x[i + 1]
     return x
-
-def get_numerical_solution_with_common_schema(I, K):
-    # Вспомогательные величины
-    h_x = l_x / I
-    h_t = T / K
-    gamma = beta * h_t / h_x ** 2
-    n = I - 1
-    x_arr = get_arr(0, I + 1, h_x)
-    t_arr = get_arr(0, K + 1, h_t)
-    V = np.zeros((K + 1, I + 1))
-
-    d = [0] * n
-    g = 1 + 2 * gamma
-    a = 1 / (1 + h * h_x)
-    d[0] = d[n - 1] = g - gamma * a
-    for i in range(1, n - 1):
-        d[i] = g
-
-    c = [0] * n
-    e = [0] * n
-    for i in range(n):
-        c[i] = e[i] = -gamma
-    c[0] = e[n - 1] = 0
-
-    # Инициализируем нулевой слой (начальное условие)
-    for i in range(I + 1):
-        V[0, i] = psi(x_arr[i])
-
-    for k in range(1, K + 1):
-        f = V[k - 1, 1 : I]
-        x = get_tridiagonal_solve(c, d, e, f)
-        for i in range(n):
-            V[k, i + 1] = x[i]
-
-        # Добавляем граничные условия
-        V[k, 0] =   V[k, 1]   / (1 + h * h_x)
-        V[k, I] = V[k, I - 1] / (1 + h * h_x)
-    return V
 
 def get_numerical_solution_with_modified_schema(I, K):
     # Вспомогательные величины
@@ -117,8 +78,8 @@ def get_numerical_solution_with_modified_schema(I, K):
     return V
 
 def draw_numerical_solution(V):
-    t_values = [0, 5, 20, 75, 200]
-    x_values = [0, 1, 2, 3, 4, 5]
+    t_values = [0, 5, 20, 40, 75, 200]
+    x_values = [5,6,7,8,9,10]
     x_arr = get_arr(0, I + 1, l_x / I)
     t_arr = get_arr(0, K + 1, T / K)
 
@@ -159,7 +120,7 @@ def get_solve_value(x, t, n):
         value += get_Cn(i) * np.exp(-beta * p_i ** 2 * t) * np.cos(p_i * z)
     return value
 
-def meth_dich(a, b, eps):
+def get_solve_by_dichotomy_method(a, b, eps):
     while abs(b - a) > 2 * eps:
         mid = (a + b) / 2
         if fun(mid) * fun(b) <= 0:
@@ -171,10 +132,9 @@ def meth_dich(a, b, eps):
 def fun(x):
     return np.tan(l_x * x / 2) - h / x
 
-def draw_analytical_solution_for_fixed_t(n):
+def draw_analytical_solution_for_fixed_t(t, n):
     #Рассматриваем правую половину отрезка, т.е. l_x / 2 < x < l_x (она симметрична левой)
     x_arr = get_arr(l_x / 2, I + 1, l_x / (2 * I))
-    t = 5
 
     plt.figure(3, label=f"График аналитического решения: зависимости температуры от x при t = {t}")
     plt.xlabel('Координата x, см')
@@ -184,7 +144,7 @@ def draw_analytical_solution_for_fixed_t(n):
     V_analytic = [0] * (I + 1)
     for i in range(I + 1):
         V_analytic[i] = get_solve_value(x_arr[i], t, n)
-    plt.plot(x_arr, V_analytic, label=f"Аналитическое решение, t = {t}, n = {n}", color="blue")
+    plt.plot(x_arr, V_analytic, label=f"Аналитическое решение", color="blue")
 
     #Строим симметрично левую половину
     x_arr = get_arr(0, I + 1, l_x / (2 * I))
@@ -193,27 +153,27 @@ def draw_analytical_solution_for_fixed_t(n):
         V_analytic[i] = get_solve_value(x_arr[i], t, n)
     plt.plot(x_arr, V_analytic, color="blue")
 
-    splitting_values = [(10, 10), (20, 40), (40, 160), (80, 640), (160, 2560), (320, 10240)]
+    splitting_values = [(10, 10), (20, 20), (40, 40), (80, 80), (160, 160), (320, 320)]
     for (cur_I, cur_K) in splitting_values:
         V_numerical = get_numerical_solution_with_modified_schema(cur_I, cur_K)
         x_arr = get_arr(0, (cur_I + 1), l_x / cur_I)
         plt.plot(x_arr, V_numerical[(int)(t * cur_K / T), :], label=f"I = {cur_I}, K = {cur_K}")
 
     plt.legend()
+    plt.show()
 
-def draw_analytical_solution_for_fixed_x(n):
+def draw_analytical_solution_for_fixed_x(x, n):
     t_arr = get_arr(0, K + 1 , T / K)
-    x = 3
     plt.figure(4, label=f"График аналитического решения: зависимости температуры от t при x = {x}")
 
     V_analytic = [0] * (K + 1)
     for i in range(K + 1):
         V_analytic[i] = get_solve_value(x, t_arr[i], n)
-    plt.plot(t_arr, V_analytic, label=f"Аналитическое решение, x = {x}, n = {n}", color="blue")
+    plt.plot(t_arr, V_analytic, label=f"Аналитическое решение", color="blue")
     plt.xlabel('Время, с')
     plt.ylabel('Температура, ℃')
 
-    splitting_values = [(10, 10), (20, 40), (40, 160), (80, 640), (160, 2560), (320, 10240)]
+    splitting_values = [(10, 10), (20, 20), (40, 40), (80, 80), (160, 160), (320, 320)]
     for (cur_I, cur_K) in splitting_values:
         V_numerical = get_numerical_solution_with_modified_schema(cur_I, cur_K)
         t_arr = get_arr(0, (cur_K + 1), T / cur_K)
@@ -237,24 +197,7 @@ def get_norm(V_numerical, x_arr, t_arr, n):
     return max
 
 
-def print_error_dependency_results_with_common_schema(n):
-    #values_for_error_dependency = [(10, 10), (20, 20), (40, 40), (80, 80), (160, 160), (320, 320), (640, 640)]
-    values_for_error_dependency = [(10, 5), (20, 20), (40, 100), (80, 400), (160, 1600)]
-    result = []
-    for (I, K) in values_for_error_dependency:
-        V_numerical = get_numerical_solution_with_common_schema(I, K)
-        x_arr = get_arr(0, I + 1, l_x / I)
-        t_arr = get_arr(0, K + 1, T / K)
-        eps = get_norm(V_numerical, x_arr, t_arr, n)
-        print(f"I = {I}, K = {K}, eps = {eps}")
-        result.append(eps)
-    print("--------------------")
-    for i in range(len(result) - 1):
-        print(result[i] / result[i + 1])
-
-
 def print_error_dependency_results_with_modified_schema(n):
-    #values_for_error_dependency = [(10, 5), (20, 20), (40, 80), (80, 320), (160, 1280)]
     values_for_error_dependency = [(5, 3), (10, 12), (20, 48), (40, 192), (80, 768), (160, 3072)]
     result = []
     for (I, K) in values_for_error_dependency:
@@ -276,14 +219,14 @@ alpha = 0.004
 k = 0.13
 c = 1.84
 u_0 = 0
-I = 200
-K = 200
+I = 500
+K = 500
 
 beta = k / c
 h = alpha / k
 
-#V_numerical = get_numerical_solution_with_modified_schema(I, K)
-#draw_numerical_solution(V_numerical)
+V_numerical = get_numerical_solution_with_modified_schema(I, K)
+draw_numerical_solution(V_numerical)
 
 #Поиск трансцендентных корней
 n = 100
@@ -294,12 +237,11 @@ eps = 10 ** (-12)
 l = d
 for i in range(n):
     r_asymp = np.pi * (2 * i + 1) / l_x
-    P_n.append(meth_dich(l, r_asymp - d, eps))
+    P_n.append(get_solve_by_dichotomy_method(l, r_asymp - d, eps))
     l = r_asymp + d
 
+#draw_analytical_solution_for_fixed_t(100, n)
+#draw_analytical_solution_for_fixed_x(3, n)
 
-#draw_analytical_solution_for_fixed_t(n)
-#draw_analytical_solution_for_fixed_x(n)
-
-print_error_dependency_results_with_modified_schema(n)
+#print_error_dependency_results_with_modified_schema(n)
 
